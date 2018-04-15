@@ -149,11 +149,12 @@ public class Coordinator {
             writeDOTFile(cmd.getOptionValue("dot"), network);
 
         if (cmd.getOptionValue("log") != null) {
+            logPath = cmd.getOptionValue("log");
+
             try(Reader reader = new BufferedReader(new InputStreamReader(
                     new FileInputStream(cmd.getOptionValue("log")), "utf-8"))) {
-                logPath = cmd.getOptionValue("log");
                 log = new JSONObject(new JSONTokener(reader));
-            } catch (IOException e) {
+            } catch (FileNotFoundException ignore) {} catch (IOException e) {
                 System.err.println("I/O Exception: " + e.getMessage());
             }
         }
