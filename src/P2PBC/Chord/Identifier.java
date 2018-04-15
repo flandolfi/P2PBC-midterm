@@ -1,3 +1,5 @@
+package P2PBC.Chord;
+
 import java.math.BigInteger;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -35,8 +37,20 @@ public class Identifier implements Comparable<Identifier> {
         return new Identifier(id.add(bigInteger));
     }
 
+    public Identifier add(Identifier identifier) {
+        return add(identifier.id);
+    }
+
     public Identifier subtract(BigInteger bigInteger) {
         return new Identifier(id.subtract(bigInteger));
+    }
+
+    public Identifier subtract(Identifier identifier) {
+        return subtract(identifier.id);
+    }
+
+    public int getValue() {
+        return id.intValue();
     }
 
     public boolean isBetween(Identifier left, Identifier right) {

@@ -1,3 +1,5 @@
+package P2PBC.Chord;
+
 import java.math.BigInteger;
 import java.net.InetAddress;
 import java.util.*;
@@ -21,6 +23,14 @@ public class Node {
 
     public Identifier getId() {
         return id;
+    }
+
+    public Node getPredecessor() {
+        return predecessor;
+    }
+
+    public Node[] getFingerTable() {
+        return fingerTable;
     }
 
     public void updateFingerTable(TreeMap<Identifier, Node> network) {
@@ -92,5 +102,18 @@ public class Node {
                 return fingerTable[i];
 
         return this;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj instanceof Node)
+            return id.equals(((Node) obj).id);
+
+        return false;
+    }
+
+    @Override
+    public int hashCode() {
+        return id.hashCode();
     }
 }
