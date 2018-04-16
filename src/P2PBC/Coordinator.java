@@ -4,11 +4,6 @@ import P2PBC.Chord.*;
 
 import org.apache.commons.cli.*;
 
-//import org.jgrapht.alg.shortestpath.GraphMeasurer;
-import org.jgrapht.alg.shortestpath.DijkstraShortestPath;
-import org.jgrapht.graph.DefaultEdge;
-import org.jgrapht.graph.DirectedPseudograph;
-
 import org.json.JSONObject;
 import org.json.JSONTokener;
 
@@ -19,8 +14,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 public class Coordinator {
-    public static DirectedPseudograph<Node, DefaultEdge> buildNetwork(int bits, int nodes) {
-        DirectedPseudograph<Node, DefaultEdge> model = new DirectedPseudograph<>(DefaultEdge.class);
+    public static Collection<Node> buildNetwork(int bits, int nodes) {
         TreeMap<Identifier, Node> network = new TreeMap<>();
         Random random = new Random();
         byte[] bytes = new byte[4];
@@ -32,7 +26,6 @@ public class Coordinator {
             try {
                 random.nextBytes(bytes);
                 Node node = new Node(InetAddress.getByAddress(bytes));
-                model.addVertex(node);
 
                 if (network.putIfAbsent(node.getId(), node) == null) {
                     System.out.print("Creating nodes: " + ++i + " of " + nodes + ".\r");
@@ -45,14 +38,10 @@ public class Coordinator {
 
         for (Node node : network.values()) {
             node.updateFingerTable(network);
-
-            for (Node edge: node.getFingerTable())
-                model.addEdge(node, edge);
-
             System.out.print("Creating finger tables: " + ++i + " of " + network.size() + ".\r");
         }
 
-        return model;
+        return network.values();
     }
 
     public static void writeDOTFile(String path, Collection<Node> network) {
@@ -68,7 +57,7 @@ public class Coordinator {
             }
 
             writer.append("}\n");
-            System.out.println("Done.");
+            System.out.print("Done.");
         } catch (IOException e) {
             System.err.println("I/O Exception: " + e.getMessage());
         }
@@ -82,14 +71,14 @@ public class Coordinator {
             for (Node node : network)
                 writer.append(node.toSIF());
 
-            System.out.println("Done.");
+            System.out.print("Done.");
         } catch (IOException e) {
             System.err.println("I/O Exception: " + e.getMessage());
         }
     }
 
     public static void main(String[] args) {
-        Integer nBits = 16, nNodes = 1024;
+        Integer nBits = 16, nNodes = 1024, nIters = 1024;
         Options options =  new Options();
         CommandLineParser parser = new DefaultParser();
         HelpFormatter formatter = new HelpFormatter();
@@ -101,9 +90,11 @@ public class Coordinator {
         Option DOTOpt = new Option("d", "dot", true, "Export graph to DOT file");
         Option logOpt = new Option("l", "log", true, "Append log statistics to JSON file");
         Option helpOpt = new Option("h", "help", false, "Show this help text and exit");
+        Option itOpt = new Option("i", "iterations", true,
+                "If set, perform a fixed number of lookup (random) simulations instead of one for each node");
 
-        options.addOption(nodesOpt).addOption(bitsOpt).addOption(SIFOpt)
-                .addOption(DOTOpt).addOption(logOpt).addOption(helpOpt);
+        options.addOption(nodesOpt).addOption(bitsOpt).addOption(SIFOpt).addOption(DOTOpt)
+                .addOption(logOpt).addOption(helpOpt).addOption(itOpt);
 
         try {
             cmd = parser.parse(options, args);
@@ -118,6 +109,11 @@ public class Coordinator {
 
             if (cmd.getOptionValue("bits") != null)
                 nBits = Integer.parseInt(cmd.getOptionValue("bits"));
+
+            if (cmd.getOptionValue("iterations") != null)
+                nIters = Integer.parseInt(cmd.getOptionValue("iterations"));
+            else
+                nIters = nNodes;
         } catch (NumberFormatException e) {
             System.err.println("Arguments must be integers.");
             System.exit(1);
@@ -138,8 +134,7 @@ public class Coordinator {
         }
 
         JSONObject log = new JSONObject();
-        DirectedPseudograph<Node, DefaultEdge> model = buildNetwork(nBits, nNodes);
-        Set<Node> network = model.vertexSet();
+        ArrayList<Node> network = new ArrayList<>(buildNetwork(nBits, nNodes));
         String logPath = "log.json";
 
         if (cmd.getOptionValue("sif") != null)
@@ -161,42 +156,37 @@ public class Coordinator {
 
         /* **************************************** START SIMULATION ************************************************ */
 
-        System.out.print("\nRunning simulations: 0 of " + nNodes + ".\r");
+        System.out.print("\nRunning simulations: 0 of " + nIters + ".\r");
         Random random = new Random();
         byte[] bytes = new byte[32];
         ArrayList<Integer> keys = new ArrayList<>();
         ArrayList<Integer> pathLength = new ArrayList<>();
-        ArrayList<Integer> inDegree = new ArrayList<>();
-        ArrayList<Integer> shortestPathLength = new ArrayList<>();
         HashMap<Node, Integer> queries = new HashMap<>();
-        DijkstraShortestPath<Node, DefaultEdge> dijkstraAlg = new DijkstraShortestPath<>(model);
-//        GraphMeasurer<Node, DefaultEdge> measurer = new GraphMeasurer<>(model);
-        int i = 0;
 
-        for (Node node: network) {
+        for (int i = 0; i < nIters; i++) {
+            Node node = network.get(cmd.getOptionValue("iterations") != null? random.nextInt(nNodes) : i);
             random.nextBytes(bytes);
             Identifier id = new Identifier(bytes);
-            Identifier gap = node.getId().subtract(node.getPredecessor().getId());
-            keys.add(gap.getValue());
             List<Node> path = node.getPathTo(id);
             pathLength.add(path.size() - 1);
-            inDegree.add(model.inDegreeOf(node));
-            shortestPathLength.add(dijkstraAlg.getPath(node, path.get(path.size() - 1)).getLength());
             path.forEach(n -> queries.compute(n, (k, v) -> { if (v == null) return 1; else return v + 1; }));
-            System.out.print("Running simulations: " + ++i + " of " + network.size() + ".\r");
+            System.out.print("Running simulations: " + (i + 1) + " of " + nIters + ".\r");
         }
 
         System.out.print("\nWriting statistics... ");
 
+        for (Node node: network) {
+            Identifier gap = node.getId().subtract(node.getPredecessor().getId());
+            keys.add(gap.getValue());
+            queries.putIfAbsent(node, 0);
+        }
+
         HashMap<String, Object> results = new HashMap<>();
         results.put("bits", nBits);
         results.put("nodes", nNodes);
-//        results.put("radius", measurer.getRadius());
-//        results.put("diameter", measurer.getDiameter());
-        results.put("indegrees", inDegree);
+        results.put("iterations", nIters);
         results.put("gaps", keys);
         results.put("pathLengths", pathLength);
-        results.put("shortestPathLengths", shortestPathLength);
         results.put("queries", network.stream().map(queries::get).collect(Collectors.toList()));
 
         log.append("experiments", new JSONObject(results));
