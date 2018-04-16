@@ -50,7 +50,7 @@ public class Node {
         return id.toString();
     }
 
-    public String toSIF() {
+    public String toSIFString() {
         StringBuilder result = new StringBuilder();
         result.append(id.toString()).append(" link");
 
@@ -61,7 +61,7 @@ public class Node {
         return result.append("\n").toString();
     }
 
-    public String toDOT() {
+    public String toDOTString() {
         StringBuilder result = new StringBuilder();
         result.append(id.toString()).append(" [label=\"").append(address.toString()).append("\"]; ")
                 .append(id.toString()).append(" -> {");

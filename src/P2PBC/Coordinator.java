@@ -53,7 +53,7 @@ public class Coordinator {
                     .append("\n\ndigraph network {\n");
 
             for (Node node : network) {
-                writer.append("\t").append(node.toDOT());
+                writer.append("\t").append(node.toDOTString());
             }
 
             writer.append("}\n");
@@ -69,7 +69,7 @@ public class Coordinator {
             System.out.print("\nWriting SIF file... ");
 
             for (Node node : network)
-                writer.append(node.toSIF());
+                writer.append(node.toSIFString());
 
             System.out.print("Done.");
         } catch (IOException e) {
