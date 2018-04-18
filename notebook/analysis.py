@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from IPython.display import display
 
-with open("/home/landi/Dropbox/Documents/P2P/P2PBC-midterm/data/logs/log.json") as file:
+with open("./data/logs/log.json") as file:
     jsonFile = json.load(file)['experiments']
 
 experiments = pd.DataFrame(jsonFile)
