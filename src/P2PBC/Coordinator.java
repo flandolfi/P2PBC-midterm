@@ -11,7 +11,6 @@ import java.io.*;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.*;
-import java.util.stream.Collectors;
 
 public class Coordinator {
     public static Collection<Node> buildNetwork(int bits, int nodes) {
