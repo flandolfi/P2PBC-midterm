@@ -17,6 +17,7 @@ sns.set_style("white", {
     'font.family': [u'serif'],
     'font.serif': [u'Latin Modern'],
     'axes.linewidth': 1.0})
+sns.color_palette("muted")
 
 # %%
 def unfold(dictionary):
@@ -67,7 +68,7 @@ plt.show()
 # %%
 g_dict = experiments.iloc[11]['gaps']
 g_keys = sorted([int(k) for k in g_dict.keys()])
-g_pdf = [g_dict['{}'.format(k)]/(experiments.iloc[11]['iterations']*(2**12))
+g_pdf = [g_dict['{}'.format(k)]/float(experiments.iloc[11]['iterations']*(2**12))
         for k in g_keys]
 plt.plot(g_keys, g_pdf, lw=1)
 plt.show()
@@ -92,7 +93,7 @@ plt.show()
 # %%
 en_dict = experiments.iloc[11]['endNodes']
 en_keys = sorted([int(k) for k in en_dict.keys()])
-en_pdf = [en_dict['{}'.format(k)]/(experiments.iloc[11]['iterations']*(2**12))
+en_pdf = [en_dict['{}'.format(k)]/float(experiments.iloc[11]['iterations']*(2**12))
         for k in en_keys]
 plt.plot(en_keys, en_pdf, lw=1)
 plt.show()
@@ -100,7 +101,7 @@ plt.show()
 # %%
 ax = plt.axes()
 ax.plot(en_keys, en_pdf, lw=1)
-ax.plot(g_keys, g_pdf, lw=1, c=sns.color_palette()[2])
+ax.plot(g_keys, g_pdf, lw=1, c=sns.color_palette()[3])
 plt.show()
 
 # %% --- PATH LENGTH --- %% #
@@ -118,10 +119,11 @@ plt.show()
 
 # %%
 sns.distplot(unfold(experiments.iloc[11]['pathLengths']), kde=False)
+plt.show()
 
 # %%
 pl_dict = experiments.iloc[11]['pathLengths']
-pl_pdf = [pl_dict['{}'.format(k)]/(experiments.iloc[11]['iterations']*(2**12))
+pl_pdf = [pl_dict['{}'.format(k)]/float(experiments.iloc[11]['iterations']*(2**12))
         for k in range(14)]
 plt.plot(range(14), pl_pdf, lw=1)
 plt.show()
@@ -146,7 +148,7 @@ plt.show()
 # %%
 q_dict = experiments.iloc[11]['queries']
 q_keys = sorted([int(k) for k in q_dict.keys()])
-q_pdf = [q_dict['{}'.format(k)]/(experiments.iloc[11]['iterations']*(2**12))
+q_pdf = [q_dict['{}'.format(k)]/float(experiments.iloc[11]['iterations']*(2**12))
         for k in q_keys]
 plt.plot(q_keys, q_pdf, lw=1)
 plt.show()
