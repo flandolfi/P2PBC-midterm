@@ -51,10 +51,19 @@ public class Node {
     }
 
     public String toSIFString() {
+        return toSIFString(true);
+    }
+
+    public String toSIFString(boolean asMultigraph) {
         StringBuilder result = new StringBuilder();
+        Collection<Node> neighbours = Arrays.asList(fingerTable);
+
+        if (!asMultigraph)
+            neighbours = new HashSet<>(neighbours);
+
         result.append(id.toString()).append(" link");
 
-        for (Node link: fingerTable) {
+        for (Node link: neighbours) {
             result.append(" ").append(link.toString());
         }
 
@@ -62,11 +71,20 @@ public class Node {
     }
 
     public String toDOTString() {
+        return toDOTString(true);
+    }
+
+    public String toDOTString(boolean asMultigraph) {
         StringBuilder result = new StringBuilder();
+        Collection<Node> neighbours = Arrays.asList(fingerTable);
+
+        if (!asMultigraph)
+            neighbours = new HashSet<>(neighbours);
+
         result.append(id.toString()).append(" [label=\"").append(address.toString()).append("\"]; ")
                 .append(id.toString()).append(" -> {");
 
-        for (Node link: fingerTable) {
+        for (Node link: neighbours) {
             result.append(" ").append(link.toString());
         }
 
