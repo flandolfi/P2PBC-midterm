@@ -1,29 +1,23 @@
 #!/bin/bash
 
+cd $(dirname $(readlink -f $0))
+
 NODES=2
-ITERS=1024
+ITERS=16
 BITS=16
-DIR_PATH=$1
+GRAPH_DIR="../data/graphs/"
+LOG_DIR="../data/logs/"
 
-if [ -z ${DIR_PATH} ]; then
-    DIR_PATH="../data/"
-fi
-
-if [ ! -d ${DIR_PATH} ]; then
-    echo -e"\"$1\"Not a directory. Usage:\n\t${0##*/} [LOG DIRECTORY PATH]"
-    exit 1
-fi
-
-mkdir -p "${DIR_PATH}/graphs/"
-mkdir -p "${DIR_PATH}/logs/"
+mkdir -p ${GRAPH_DIR}
+mkdir -p ${LOG_DIR}
 
 for i in `seq 1 ${BITS}`; do
     echo " --- Starting simulations with $NODES nodes ---"
     java -jar P2PBC-midterm.jar \
             -n ${NODES} \
-            -i ${ITERS} \
+            -l ${ITERS} \
             -b ${BITS} \
-            -s ${DIR_PATH}/graphs/graph_${NODES}_nodes.sif \
-            -l ${DIR_PATH}/logs/log_${ITERS}_simulations.json
+            -s ${GRAPH_DIR}/graph_${NODES}_nodes.sif \
+            -o ${LOG_DIR}/log.json
     NODES=$((NODES*2))
 done
