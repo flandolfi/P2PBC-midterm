@@ -173,6 +173,7 @@ public class Coordinator {
             Identifier gap = node.getId().subtract(node.getPredecessor().getId());
             gapHist.compute(gap.getValue(), (k, v) -> v == null ? 1 : v + 1);
             queries.putIfAbsent(node, 0);
+            endNodes.putIfAbsent(node, 0);
 
             for (int i = 0; i < nIters; i++) {
                 random.nextBytes(bytes);
