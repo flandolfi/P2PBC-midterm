@@ -4,6 +4,7 @@ import P2PBC.Chord.*;
 
 import org.apache.commons.cli.*;
 
+import org.json.JSONException;
 import org.json.JSONObject;
 import org.json.JSONTokener;
 
@@ -140,6 +141,8 @@ public class Coordinator {
             try(Reader reader = new BufferedReader(new InputStreamReader(
                     new FileInputStream(cmd.getOptionValue("out")), "utf-8"))) {
                 log = new JSONObject(new JSONTokener(reader));
+            } catch (JSONException e) {
+                log = new JSONObject();
             } catch (FileNotFoundException ignore) {} catch (IOException e) {
                 System.err.println("I/O Exception: " + e.getMessage());
                 System.exit(1);
