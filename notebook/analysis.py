@@ -9,13 +9,18 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from IPython.display import display
 
-with open("./data/logs/log.json") as file:
-    jsonFile = json.load(file)['experiments']
-
-experiments = pd.DataFrame(jsonFile)
-display(experiments.head())
-
 # %%
+def unfold(hist):
+    if type(hist) is dict:
+        return [ int(k) for k, v in hist.items() for i in range(v) ]
+
+    if type(hist) is list:
+        return [ k for k in range(len(hist)) for i in range(int(hist[k])) ]
+
+    return [ k for k, v in hist for i in range(int(v)) ]
+
+
+# %% --- SETTINGS --- %% #
 sns.set_style("white", {
     'font.family': [u'serif'],
     'font.serif': [u'Computer Modern'] })
@@ -36,7 +41,7 @@ boxplot_args = {
         'edgecolor': '#262626'
     },
     'capprops': {
-        'color': '#262626',
+        'color': '#262626'
     },
     'whiskerprops': {
         'markerfacecolor': '#262626',
@@ -56,16 +61,13 @@ boxplot_args = {
     }
 }
 
-# %%
-def unfold(hist):
-    if type(hist) is dict:
-        return [ int(k) for k, v in hist.items() for i in range(v) ]
 
-    if type(hist) is list:
-        return [ k for k in range(len(hist)) for i in range(int(hist[k])) ]
+# %% --- DATA PREPARATION --- %% #
+with open("./data/logs/log.json") as file:
+    jsonFile = json.load(file)['experiments']
 
-    return [ k for k, v in hist for i in range(int(v)) ]
-
+experiments = pd.DataFrame(jsonFile)
+display(experiments.head())
 
 # %%
 metrics = pd.read_csv("data/cytoscape/summary/stats.csv", sep="\t").sort_values('nodes')
@@ -177,7 +179,7 @@ c_pdf, c_keys = np.histogram(chord, bins=max(chord), density=True)
 sp_pdf, sp_keys = np.histogram(sp, bins=max(sp), density=True)
 fix, ax = plt.subplots()
 ax.plot(c_keys[:-1], c_pdf, lw=1.5, label="Chord")
-ax.plot(sp_keys[:-1], sp_pdf, lw=1.5, label="Shorthest Path")
+ax.plot(c_keys[:-1], sp_pdf.tolist() + [0, 0, 0, 0], lw=1.5, label="Shorthest Path")
 ax.legend().set_visible(True)
 ax.set_xlabel("Path Length")
 ax.set_ylabel("PDF")
@@ -206,6 +208,7 @@ plt.tight_layout()
 plt.savefig("report/figures/pdf_lookups.pdf")
 plt.show()
 
+
 # %% --- METRICS --- %% #
 fig, ax = plt.subplots()
 ax.plot(metrics["radius"], label="Radius")
@@ -228,6 +231,7 @@ ax.set_ylabel("Clustering Coefficient")
 plt.tight_layout()
 plt.savefig("report/figures/metrics_cc.pdf")
 plt.show()
+
 
 # %% --- NODE DEGREES --- %% #
 sns.boxplot(data=degrees, x="Nodes", y="Degree", hue="Type", **boxplot_args)
