@@ -1,7 +1,10 @@
+#!/bin/python3
+
 # %%
 import json
 import pandas as pd
 import numpy as np
+import matplotlib as mpl
 import matplotlib.pyplot as plt
 import seaborn as sns
 from IPython.display import display
@@ -15,140 +18,204 @@ display(experiments.head())
 # %%
 sns.set_style("white", {
     'font.family': [u'serif'],
-    'font.serif': [u'Latin Modern'],
-    'axes.linewidth': 1.0})
-sns.color_palette("muted")
+    'font.serif': [u'Computer Modern'],
+    # 'axes.linewidth': 1.0
+    })
+sns.set_palette("muted")
+mpl.rcParams['mathtext.fontset'] = 'cm'
+mpl.rcParams['text.usetex'] = True
 
 # %%
-def unfold(dictionary):
-    return [ int(k) for k, v in dictionary.items() for i in range(v) ]
+labels = [r'$2^{' + str(i) + r'}$' for i in range(1, 17)]
+boxplot_args = {
+    # 'labels': labels,
+    'sym': '',
+    'whis': [1, 99],
+    'showmeans': True,
+    'meanline': True,
+    'linewidth': 1,
+    'meanprops': {
+        'color': 'black',
+        'linewidth': 1.,
+        'linestyle': ':'
+    }}
+errorbar_args = {
+    'fmt': '.-.',
+    'capsize': 5,
+    'elinewidth': 1,
+    'markeredgewidth': 1,
+    'linewidth': 1 }
 
 # %%
-gaps = pd.DataFrame()
-endNodes = pd.DataFrame()
-queries = pd.DataFrame()
+def unfold(hist):
+    if type(hist) is dict:
+        return [ int(k) for k, v in hist.items() for i in range(v) ]
+
+    if type(hist) is list:
+        return [ k for k in range(len(hist)) for i in range(int(hist[k])) ]
+
+    return [ k for k, v in hist for i in range(int(v)) ]
+
+
+# %%
+summary = pd.read_csv("data/cytoscape/summary/stats.csv", sep="\t").sort_values('nodes')
+summary.index = range(1, 16)
+display(summary)
+
+# %%
+keys = pd.DataFrame()
+lookups = pd.DataFrame()
 pathLengths = pd.DataFrame()
 
 for i, exp in experiments.iterrows():
-    df = pd.DataFrame(unfold(exp['gaps'])).describe(percentiles=[.01, .99]).transpose()
-    df['nodes'] = exp['nodes']
-    gaps = gaps.append(df)
-    df = pd.DataFrame(unfold(exp['endNodes'])).describe(percentiles=[.01, .99]).transpose()
-    df['nodes'] = exp['nodes']
-    endNodes = endNodes.append(df)
-    df = pd.DataFrame(unfold(exp['queries'])).describe(percentiles=[.01, .99]).transpose()
-    df['nodes'] = exp['nodes']
-    queries = queries.append(df)
-    df = pd.DataFrame(unfold(exp['pathLengths'])).describe(percentiles=[.01, .99]).transpose()
-    df['nodes'] = exp['nodes']
+    df = pd.DataFrame(unfold(exp['gaps']), columns=['Keys'])
+    df['Nodes'] = exp['nodes']
+    df['Type'] = "Assigned"
+    keys = keys.append(df)
+    df = pd.DataFrame(unfold(exp['endNodes']), columns=['Keys'])
+    df['Nodes'] = exp['nodes']
+    df['Type'] = "Queried"
+    keys = keys.append(df)
+    df = pd.DataFrame(unfold(exp['queries']), columns=["Lookups"])
+    df['Nodes'] = exp['nodes']
+    lookups = lookups.append(df)
+    df = pd.DataFrame(unfold(exp['pathLengths']), columns=["Path Length"])
+    df['Nodes'] = exp['nodes']
+    df['Type'] = "Chord"
     pathLengths = pathLengths.append(df)
 
-display(gaps)
-display(endNodes)
-display(queries)
-display(pathLengths)
+display(keys.head())
+display(lookups.head())
+display(pathLengths.head())
+
+# %%
+degrees = pd.DataFrame()
+
+for exp in range(2, 17):
+    nodes = 2**exp
+    ins = unfold(np.genfromtxt("data/cytoscape/degree/single_{}_in.csv".format(nodes)))
+    inm = unfold(np.genfromtxt("data/cytoscape/degree/multi_{}_in.csv".format(nodes)))
+    outs = unfold(np.genfromtxt("data/cytoscape/degree/single_{}_in.csv".format(nodes)))
+    spl = unfold([1] + (np.genfromtxt("data/cytoscape/shorthestpath/multi_{}_spl.csv".format(nodes))[:, 1]/float(nodes)).tolist())
+    df = pd.DataFrame(ins, columns=["Degree"])
+    df['Nodes'] = nodes
+    df['Type'] = 'Indegree (Graph)'
+    degrees = degrees.append(df)
+    df = pd.DataFrame(outs, columns=["Degree"])
+    df['Nodes'] = nodes
+    df['Type'] = 'Outdegree (Graph)'
+    degrees = degrees.append(df)
+    df = pd.DataFrame(inm, columns=["Degree"])
+    df['Nodes'] = nodes
+    df['Type'] = 'Indegree (Multigraph)'
+    degrees = degrees.append(df)
+    degrees = degrees.append(pd.DataFrame([[16, nodes, "Outdegree (Multigraph)"]], columns=['Degree', 'Nodes', 'Type']))
+    df = pd.DataFrame(spl, columns=["Path Length"])
+    df['Nodes'] = nodes
+    df['Type'] = "Shorthest Path"
+    pathLengths = pathLengths.append(df)
+
+display(degrees.head())
+display(pathLengths.head())
+
 
 # %% --- GAPS/KEYS PER NODE --- %% #
-yerrh=(gaps['mean'].as_matrix() - gaps['1%'].as_matrix()).T
-yerrl=(gaps['99%'].as_matrix() - gaps['mean'].as_matrix()).T
-plt.errorbar(x=gaps['nodes'], y=gaps['mean'], yerr=[yerrh, yerrl],
-    fmt='.-.',
-    capsize=5,
-    elinewidth=1,
-    markeredgewidth=1,
-    linewidth=1)
-plt.xscale('log', basex=2)
+sns.boxplot(data=keys[keys['Type'] == "Assigned"], x="Nodes", y="Keys", hue="Type", width=.5, **boxplot_args)
+plt.gca().set_xticklabels(labels)
+plt.gca().legend().set_visible(False)
+plt.yscale('log', basey=2)
+plt.tight_layout()
+plt.savefig("report/figures/dist_keys.pdf")
+plt.show()
+
+# %%
+sns.boxplot(data=keys[keys['Type'] == "Queried"], x="Nodes", y="Keys", hue="Type", width=.5, **boxplot_args)
+plt.gca().set_xticklabels(labels)
+plt.gca().legend().set_visible(False)
 # plt.yscale('log', basey=2)
+plt.tight_layout()
+plt.savefig("report/figures/dist_end_nodes.pdf")
 plt.show()
 
 # %%
-sns.distplot(unfold(experiments.iloc[11]['gaps']), kde=False)
+assigned = keys[(keys['Nodes'] == 2**12) & (keys["Type"] == "Assigned")]["Keys"]
+queried = keys[(keys['Nodes'] == 2**12) & (keys["Type"] == "Queried")]["Keys"]
+v_pdf, v_keys = np.histogram(assigned, bins=max(assigned), density=True)
+r_pdf, r_keys = np.histogram(queried, bins=max(queried), density=True)
+fix, ax = plt.subplots()
+ax.plot(v_keys[:-1], v_pdf, lw=1.5, label="Assigned")
+ax.plot(r_keys[:-1], r_pdf, lw=1.5, label="Queried")
+ax.legend().set_visible(True)
+ax.set_xlabel("Keys")
+ax.set_ylabel("PDF")
+plt.tight_layout()
+plt.savefig("report/figures/pdf_keys.pdf")
 plt.show()
 
-# %%
-g_dict = experiments.iloc[11]['gaps']
-g_keys = sorted([int(k) for k in g_dict.keys()])
-g_pdf = [g_dict['{}'.format(k)]/float(experiments.iloc[11]['iterations']*(2**12))
-        for k in g_keys]
-plt.plot(g_keys, g_pdf, lw=1)
-plt.show()
-
-# %% --- END NODES --- %% #
-yerrh=(endNodes['mean'].as_matrix() - endNodes['1%'].as_matrix()).T
-yerrl=(endNodes['99%'].as_matrix() - endNodes['mean'].as_matrix()).T
-plt.errorbar(x=endNodes['nodes'], y=endNodes['mean'], yerr=[yerrh, yerrl],
-    fmt='.-.',
-    capsize=5,
-    elinewidth=1,
-    markeredgewidth=1,
-    linewidth=1)
-plt.xscale('log', basex=2)
-# plt.yscale('log', basey=2)
-plt.show()
-
-# %%
-sns.distplot(unfold(experiments.iloc[11]['endNodes']), kde=False)
-plt.show()
-
-# %%
-en_dict = experiments.iloc[11]['endNodes']
-en_keys = sorted([int(k) for k in en_dict.keys()])
-en_pdf = [en_dict['{}'.format(k)]/float(experiments.iloc[11]['iterations']*(2**12))
-        for k in en_keys]
-plt.plot(en_keys, en_pdf, lw=1)
-plt.show()
-
-# %%
-ax = plt.axes()
-ax.plot(en_keys, en_pdf, lw=1)
-ax.plot(g_keys, g_pdf, lw=1, c=sns.color_palette()[3])
-plt.show()
 
 # %% --- PATH LENGTH --- %% #
-yerrh=(pathLengths['mean'].as_matrix() - pathLengths['1%'].as_matrix()).T
-yerrl=(pathLengths['99%'].as_matrix() - pathLengths['mean'].as_matrix()).T
-plt.errorbar(x=pathLengths['nodes'], y=pathLengths['mean'], yerr=[yerrh, yerrl],
-    fmt='.-.',
-    capsize=5,
-    elinewidth=1,
-    markeredgewidth=1,
-    linewidth=1)
-plt.xscale('log', basex=2)
-# plt.yscale('log', basey=2)
+sns.boxplot(data=pathLengths, x="Nodes", y="Path Length", hue="Type", **boxplot_args)
+plt.gca().set_xticklabels(labels)
+plt.gca().legend(title=None)
+plt.tight_layout()
+plt.savefig("report/figures/dist_path_length.pdf")
 plt.show()
 
 # %%
-sns.distplot(unfold(experiments.iloc[11]['pathLengths']), kde=False)
+chord = pathLengths[(pathLengths['Nodes'] == 2**12) & (pathLengths["Type"] == "Chord")]["Path Length"]
+sp = pathLengths[(pathLengths['Nodes'] == 2**12) & (pathLengths["Type"] == "Shorthest Path")]["Path Length"]
+c_pdf, c_keys = np.histogram(chord, bins=max(chord), density=True)
+sp_pdf, sp_keys = np.histogram(sp, bins=max(sp), density=True)
+fix, ax = plt.subplots()
+ax.plot(c_keys[:-1], c_pdf, lw=1.5, label="Chord")
+ax.plot(sp_keys[:-1], sp_pdf, lw=1.5, label="Shorthest Path")
+ax.legend().set_visible(True)
+ax.set_xlabel("Path Length")
+ax.set_ylabel("PDF")
+plt.tight_layout()
+plt.savefig("report/figures/pdf_path_length.pdf")
 plt.show()
 
-# %%
-pl_dict = experiments.iloc[11]['pathLengths']
-pl_pdf = [pl_dict['{}'.format(k)]/float(experiments.iloc[11]['iterations']*(2**12))
-        for k in range(14)]
-plt.plot(range(14), pl_pdf, lw=1)
-plt.show()
 
 # %% --- QUERIES --- %% #
-yerrh=(queries['mean'].as_matrix() - queries['1%'].as_matrix()).T
-yerrl=(queries['99%'].as_matrix() - queries['mean'].as_matrix()).T
-plt.errorbar(x=queries['nodes'], y=queries['mean'], yerr=[yerrh, yerrl],
-    fmt='.-.',
-    capsize=5,
-    elinewidth=1,
-    markeredgewidth=1,
-    linewidth=1)
-plt.xscale('log', basex=2)
-# plt.yscale('log', basey=2)
+sns.boxplot(data=lookups, x="Nodes", y="Lookups", color=sns.color_palette()[0], **boxplot_args)
+plt.gca().set_xticklabels(labels)
+plt.gca().legend(title=None)
+plt.tight_layout()
+plt.savefig("report/figures/dist_lookups.pdf")
 plt.show()
 
 # %%
-sns.distplot(unfold(experiments.iloc[11]['queries']), kde=False)
+q = lookups[lookups['Nodes'] == 2**12]["Lookups"]
+q_pdf, q_keys = np.histogram(q, bins=max(q), density=True)
+fix, ax = plt.subplots()
+ax.plot(q_keys[:-1], q_pdf, lw=1.5, label="Lookups")
+ax.legend().set_visible(False)
+ax.set_xlabel("Lookups")
+ax.set_ylabel("PDF")
+plt.tight_layout()
+plt.savefig("report/figures/pdf_lookups.pdf")
+plt.show()
+
+# %% --- SUMMARY --- %% #
+fig, ax = plt.subplots()
+ax.plot(summary["radius"], label="Radius")
+ax.plot(summary["diameter"], label="Diameter")
+ax.legend().set_visible(True)
+ax.set_xticklabels(labels[1:])
+ax.set_xlabel("Nodes")
+ax.set_ylabel("Path Length")
+plt.tight_layout()
+plt.savefig("report/figures/radius_diameter.pdf")
 plt.show()
 
 # %%
-q_dict = experiments.iloc[11]['queries']
-q_keys = sorted([int(k) for k in q_dict.keys()])
-q_pdf = [q_dict['{}'.format(k)]/float(experiments.iloc[11]['iterations']*(2**12))
-        for k in q_keys]
-plt.plot(q_keys, q_pdf, lw=1)
+fig, ax = plt.subplots()
+ax.plot(summary["cc"], label="Clustering Coefficient")
+ax.legend().set_visible(False)
+ax.set_xticklabels(labels[1:])
+ax.set_xlabel("Nodes")
+ax.set_ylabel("Clustering Coefficient")
+plt.tight_layout()
+plt.savefig("report/figures/cc.pdf")
 plt.show()
