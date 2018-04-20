@@ -12,7 +12,7 @@ mkdir -p ${GRAPH_DIR}
 mkdir -p ${LOG_DIR}
 
 for i in `seq 1 ${BITS}`; do
-    echo " --- Starting simulations with $NODES nodes ---"
+    echo -e "\n --- Starting simulations with $NODES nodes ---"
     java -jar P2PBC-midterm.jar \
             -n ${NODES} \
             -l ${ITERS} \
