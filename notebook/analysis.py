@@ -1,4 +1,4 @@
-#!/bin/python3
+#!/usr/bin/python3
 
 # %%
 import json
@@ -18,18 +18,15 @@ display(experiments.head())
 # %%
 sns.set_style("white", {
     'font.family': [u'serif'],
-    'font.serif': [u'Computer Modern'],
-    # 'axes.linewidth': 1.0
-    })
-sns.set_palette("muted")
-mpl.rcParams['mathtext.fontset'] = 'cm'
+    'font.serif': [u'Computer Modern'] })
+sns.set_palette("muted", desat=0.6)
 mpl.rcParams['text.usetex'] = True
 
 # %%
 labels = [r'$2^{' + str(i) + r'}$' for i in range(1, 17)]
 boxplot_args = {
     # 'labels': labels,
-    # 'saturation': 1,
+    'saturation': 1,
     'sym': '',
     'whis': [1, 99],
     'showmeans': True,
@@ -71,9 +68,9 @@ def unfold(hist):
 
 
 # %%
-summary = pd.read_csv("data/cytoscape/summary/stats.csv", sep="\t").sort_values('nodes')
-summary.index = range(1, 16)
-display(summary)
+metrics = pd.read_csv("data/cytoscape/summary/stats.csv", sep="\t").sort_values('nodes')
+metrics.index = range(1, 16)
+display(metrics)
 
 # %%
 keys = pd.DataFrame()
@@ -112,17 +109,16 @@ for exp in range(2, 17):
     spl = unfold([1] + (np.genfromtxt("data/cytoscape/shorthestpath/multi_{}_spl.csv".format(nodes))[:, 1]/float(nodes)).tolist())
     df = pd.DataFrame(ins, columns=["Degree"])
     df['Nodes'] = nodes
-    df['Type'] = 'Indegree (Graph)'
+    df['Type'] = 'In (Graph)'
     degrees = degrees.append(df)
     df = pd.DataFrame(outs, columns=["Degree"])
     df['Nodes'] = nodes
-    df['Type'] = 'Outdegree (Graph)'
+    df['Type'] = 'Out (Graph)'
     degrees = degrees.append(df)
     df = pd.DataFrame(inm, columns=["Degree"])
     df['Nodes'] = nodes
-    df['Type'] = 'Indegree (Multigraph)'
+    df['Type'] = 'In (Multigraph)'
     degrees = degrees.append(df)
-    degrees = degrees.append(pd.DataFrame([[16, nodes, "Outdegree (Multigraph)"]], columns=['Degree', 'Nodes', 'Type']))
     df = pd.DataFrame(spl, columns=["Path Length"])
     df['Nodes'] = nodes
     df['Type'] = "Shorthest Path"
@@ -191,7 +187,7 @@ plt.show()
 
 
 # %% --- QUERIES --- %% #
-sns.boxplot(data=lookups, x="Nodes", y="Lookups", color=sns.color_palette()[0], **boxplot_args)
+sns.boxplot(data=lookups, x="Nodes", y="Lookups", color=sns.color_palette()[0], width=.5, **boxplot_args)
 plt.gca().set_xticklabels(labels)
 plt.gca().legend(title=None)
 plt.tight_layout()
@@ -210,25 +206,33 @@ plt.tight_layout()
 plt.savefig("report/figures/pdf_lookups.pdf")
 plt.show()
 
-# %% --- SUMMARY --- %% #
+# %% --- METRICS --- %% #
 fig, ax = plt.subplots()
-ax.plot(summary["radius"], label="Radius")
-ax.plot(summary["diameter"], label="Diameter")
+ax.plot(metrics["radius"], label="Radius")
+ax.plot(metrics["diameter"], label="Diameter")
 ax.legend().set_visible(True)
 ax.set_xticklabels(labels[1:])
 ax.set_xlabel("Nodes")
 ax.set_ylabel("Path Length")
 plt.tight_layout()
-plt.savefig("report/figures/radius_diameter.pdf")
+plt.savefig("report/figures/metrics_rd.pdf")
 plt.show()
 
 # %%
 fig, ax = plt.subplots()
-ax.plot(summary["cc"], label="Clustering Coefficient")
+ax.plot(metrics["cc"], label="Clustering Coefficient")
 ax.legend().set_visible(False)
 ax.set_xticklabels(labels[1:])
 ax.set_xlabel("Nodes")
 ax.set_ylabel("Clustering Coefficient")
 plt.tight_layout()
-plt.savefig("report/figures/cc.pdf")
+plt.savefig("report/figures/metrics_cc.pdf")
+plt.show()
+
+# %% --- NODE DEGREES --- %% #
+sns.boxplot(data=degrees, x="Nodes", y="Degree", hue="Type", **boxplot_args)
+plt.gca().set_xticklabels(labels)
+plt.gca().legend(title=None)
+plt.tight_layout()
+plt.savefig("report/figures/dist_degrees.pdf")
 plt.show()
