@@ -29,22 +29,35 @@ mpl.rcParams['text.usetex'] = True
 labels = [r'$2^{' + str(i) + r'}$' for i in range(1, 17)]
 boxplot_args = {
     # 'labels': labels,
+    # 'saturation': 1,
     'sym': '',
     'whis': [1, 99],
     'showmeans': True,
     'meanline': True,
     'linewidth': 1,
+    'boxprops': {
+        'edgecolor': '#262626'
+    },
+    'capprops': {
+        'color': '#262626',
+    },
+    'whiskerprops': {
+        'markerfacecolor': '#262626',
+        'markeredgecolor': '#262626',
+        'color': '#262626'
+    },
+    'flierprops': {
+        'color': '#262626'
+    },
     'meanprops': {
-        'color': 'black',
-        'linewidth': 1.,
+        'color': '#262626',
+        'linewidth': 1,
         'linestyle': ':'
-    }}
-errorbar_args = {
-    'fmt': '.-.',
-    'capsize': 5,
-    'elinewidth': 1,
-    'markeredgewidth': 1,
-    'linewidth': 1 }
+    },
+    'medianprops': {
+        'color': '#262626'
+    }
+}
 
 # %%
 def unfold(hist):
