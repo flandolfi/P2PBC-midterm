@@ -21,11 +21,13 @@ def unfold(hist):
 
 
 # %% --- SETTINGS --- %% #
-sns.set_style("white", {
-    'font.family': [u'serif'],
-    'font.serif': [u'Computer Modern'] })
-sns.set_palette("muted", desat=0.6)
+sns.set(font_scale=1.5)
+sns.set_style("white")
+sns.set_palette(['w', 'gray'])
 mpl.rcParams['text.usetex'] = True
+# mpl.rcParams['font.size'] = 16
+mpl.rcParams['font.family'] = [u'serif']
+mpl.rcParams['font.serif'] = [u'Computer Modern']
 
 # %%
 labels = [r'$2^{' + str(i) + r'}$' for i in range(1, 17)]
@@ -71,6 +73,7 @@ display(experiments.head())
 
 # %%
 metrics = pd.read_csv("data/cytoscape/summary/stats.csv", sep="\t").sort_values('nodes')
+metrics["Expected"] = 2./np.log2(metrics["nodes"])
 metrics.index = range(1, 16)
 display(metrics)
 
@@ -107,19 +110,15 @@ for exp in range(2, 17):
     nodes = 2**exp
     ins = unfold(np.genfromtxt("data/cytoscape/degree/single_{}_in.csv".format(nodes)))
     inm = unfold(np.genfromtxt("data/cytoscape/degree/multi_{}_in.csv".format(nodes)))
-    outs = unfold(np.genfromtxt("data/cytoscape/degree/single_{}_in.csv".format(nodes)))
     spl = unfold([1] + (np.genfromtxt("data/cytoscape/shorthestpath/multi_{}_spl.csv".format(nodes))[:, 1]/float(nodes)).tolist())
-    df = pd.DataFrame(ins, columns=["Degree"])
+    df = pd.DataFrame(ins, columns=["Indegree"])
     df['Nodes'] = nodes
-    df['Type'] = 'In (Graph)'
+    df['Type'] = 'Graph'
     degrees = degrees.append(df)
-    df = pd.DataFrame(outs, columns=["Degree"])
-    df['Nodes'] = nodes
-    df['Type'] = 'Out (Graph)'
     degrees = degrees.append(df)
-    df = pd.DataFrame(inm, columns=["Degree"])
+    df = pd.DataFrame(inm, columns=["Indegree"])
     df['Nodes'] = nodes
-    df['Type'] = 'In (Multigraph)'
+    df['Type'] = 'Multigraph'
     degrees = degrees.append(df)
     df = pd.DataFrame(spl, columns=["Path Length"])
     df['Nodes'] = nodes
@@ -131,21 +130,12 @@ display(pathLengths.head())
 
 
 # %% --- GAPS/KEYS PER NODE --- %% #
-sns.boxplot(data=keys[keys['Type'] == "Assigned"], x="Nodes", y="Keys", hue="Type", width=.5, **boxplot_args)
+sns.boxplot(data=keys, x="Nodes", y="Keys", hue="Type",  **boxplot_args)
 plt.gca().set_xticklabels(labels)
-plt.gca().legend().set_visible(False)
+plt.gca().legend(title=None)
 plt.yscale('log', basey=2)
 plt.tight_layout()
-plt.savefig("report/figures/dist_keys.pdf")
-plt.show()
-
-# %%
-sns.boxplot(data=keys[keys['Type'] == "Queried"], x="Nodes", y="Keys", hue="Type", width=.5, **boxplot_args)
-plt.gca().set_xticklabels(labels)
-plt.gca().legend().set_visible(False)
-# plt.yscale('log', basey=2)
-plt.tight_layout()
-plt.savefig("report/figures/dist_end_nodes.pdf")
+plt.savefig("report/figures/dist_keys.pdf", bbox_inches='tight')
 plt.show()
 
 # %%
@@ -154,13 +144,14 @@ queried = keys[(keys['Nodes'] == 2**12) & (keys["Type"] == "Queried")]["Keys"]
 v_pdf, v_keys = np.histogram(assigned, bins=max(assigned), density=True)
 r_pdf, r_keys = np.histogram(queried, bins=max(queried), density=True)
 fix, ax = plt.subplots()
-ax.plot(v_keys[:-1], v_pdf, lw=1.5, label="Assigned")
-ax.plot(r_keys[:-1], r_pdf, lw=1.5, label="Queried")
+ax.plot(v_keys[:-1], v_pdf, lw=1, label="Assigned", c='k')
+ax.plot(r_keys[:-1], r_pdf, lw=1, label="Queried", c='k', linestyle='--')
 ax.legend().set_visible(True)
 ax.set_xlabel("Keys")
 ax.set_ylabel("PDF")
+# plt.yscale('log', basey=2)
 plt.tight_layout()
-plt.savefig("report/figures/pdf_keys.pdf")
+plt.savefig("report/figures/pdf_keys.pdf", bbox_inches='tight')
 plt.show()
 
 
@@ -169,7 +160,7 @@ sns.boxplot(data=pathLengths, x="Nodes", y="Path Length", hue="Type", **boxplot_
 plt.gca().set_xticklabels(labels)
 plt.gca().legend(title=None)
 plt.tight_layout()
-plt.savefig("report/figures/dist_path_length.pdf")
+plt.savefig("report/figures/dist_path_lengths.pdf", bbox_inches='tight')
 plt.show()
 
 # %%
@@ -178,13 +169,13 @@ sp = pathLengths[(pathLengths['Nodes'] == 2**12) & (pathLengths["Type"] == "Shor
 c_pdf, c_keys = np.histogram(chord, bins=max(chord), density=True)
 sp_pdf, sp_keys = np.histogram(sp, bins=max(sp), density=True)
 fix, ax = plt.subplots()
-ax.plot(c_keys[:-1], c_pdf, lw=1.5, label="Chord")
-ax.plot(c_keys[:-1], sp_pdf.tolist() + [0, 0, 0, 0], lw=1.5, label="Shorthest Path")
+ax.plot(c_keys[:-1], c_pdf, lw=1, label="Chord", c='k')
+ax.plot(c_keys[:-1], sp_pdf.tolist() + [0, 0, 0, 0], lw=1, label="Shorthest Path", c='k', linestyle='--')
 ax.legend().set_visible(True)
 ax.set_xlabel("Path Length")
 ax.set_ylabel("PDF")
 plt.tight_layout()
-plt.savefig("report/figures/pdf_path_length.pdf")
+plt.savefig("report/figures/pdf_path_lengths.pdf", bbox_inches='tight')
 plt.show()
 
 
@@ -192,51 +183,56 @@ plt.show()
 sns.boxplot(data=lookups, x="Nodes", y="Lookups", color=sns.color_palette()[0], width=.5, **boxplot_args)
 plt.gca().set_xticklabels(labels)
 plt.gca().legend(title=None)
+plt.yscale('log', basey=2)
 plt.tight_layout()
-plt.savefig("report/figures/dist_lookups.pdf")
+plt.savefig("report/figures/dist_lookups.pdf", bbox_inches='tight')
 plt.show()
 
 # %%
 q = lookups[lookups['Nodes'] == 2**12]["Lookups"]
 q_pdf, q_keys = np.histogram(q, bins=max(q), density=True)
 fix, ax = plt.subplots()
-ax.plot(q_keys[:-1], q_pdf, lw=1.5, label="Lookups")
+ax.plot(q_keys[:-1], q_pdf, lw=1, label="Lookups", c='k')
 ax.legend().set_visible(False)
 ax.set_xlabel("Lookups")
 ax.set_ylabel("PDF")
 plt.tight_layout()
-plt.savefig("report/figures/pdf_lookups.pdf")
+plt.savefig("report/figures/pdf_lookups.pdf", bbox_inches='tight')
 plt.show()
 
 
 # %% --- METRICS --- %% #
 fig, ax = plt.subplots()
-ax.plot(metrics["radius"], label="Radius")
-ax.plot(metrics["diameter"], label="Diameter")
+ax = metrics.plot(x="nodes", y="radius", lw=1, label="Radius", c='k')
+metrics.plot(x="nodes", y="diameter", lw=1, label="Diameter", c='k', linestyle='--', ax=ax)
 ax.legend().set_visible(True)
-ax.set_xticklabels(labels[1:])
 ax.set_xlabel("Nodes")
 ax.set_ylabel("Path Length")
+plt.xscale('log', basex=2)
+# plt.yscale('log', basey=2)
 plt.tight_layout()
-plt.savefig("report/figures/metrics_rd.pdf")
+plt.savefig("report/figures/metrics_rd.pdf", bbox_inches='tight')
 plt.show()
 
 # %%
 fig, ax = plt.subplots()
-ax.plot(metrics["cc"], label="Clustering Coefficient")
-ax.legend().set_visible(False)
-ax.set_xticklabels(labels[1:])
+
+ax = metrics.plot(x="nodes", y="cc", lw=1, label="Observed", c='k')
+metrics.plot(x="nodes", y="Expected", lw=1, c='k', linestyle='--', ax=ax)
+ax.legend().set_visible(True)
 ax.set_xlabel("Nodes")
 ax.set_ylabel("Clustering Coefficient")
+plt.xscale('log', basex=2)
+# plt.yscale('log', basey=2)
 plt.tight_layout()
-plt.savefig("report/figures/metrics_cc.pdf")
+plt.savefig("report/figures/metrics_cc.pdf", bbox_inches='tight')
 plt.show()
 
 
 # %% --- NODE DEGREES --- %% #
-sns.boxplot(data=degrees, x="Nodes", y="Degree", hue="Type", **boxplot_args)
-plt.gca().set_xticklabels(labels)
+sns.boxplot(data=degrees, x="Nodes", y="Indegree", hue="Type", **boxplot_args)
+plt.gca().set_xticklabels(labels[1:])
 plt.gca().legend(title=None)
 plt.tight_layout()
-plt.savefig("report/figures/dist_degrees.pdf")
+plt.savefig("report/figures/dist_degrees.pdf", bbox_inches='tight')
 plt.show()
