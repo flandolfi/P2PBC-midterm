@@ -116,7 +116,7 @@ public class Node {
 
     private Node findPredecessor(Identifier identifier) {
         for (int i = Identifier.getBitLength() - 1; i >= 0 ; i--)
-            if (!fingerTable[i].id.equals(identifier) && fingerTable[i].id.isBetween(id, identifier))
+            if (fingerTable[i].id.isBetween(id, identifier))
                 return fingerTable[i];
 
         return this;
