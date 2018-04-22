@@ -1,7 +1,7 @@
 # Analysis and Simulation of the Chord Lookup Protocol ##
 
 The goal of this project is to create a model of a Chord network and simulate
-the lookup protocol. This application was developed as a midterm of the Peer to
+the lookup protocol. This application was developed as a midterm for the Peer to
 Peer and Block Chain (P2PBC) course at University of Pisa, taught by Prof. Laura
 Ricci.
 
@@ -50,7 +50,7 @@ or the length of the path computed by Chord. As example:
       ]
     }
 
-The program have also the following optional parameters, that can be printed
+The program has also the following optional parameters, that can be printed
 using the `-h` or `--help` option:
 
     $ java -jar ./bin/P2PBC-midterm.jar --help
@@ -92,7 +92,7 @@ parameters:
 | 15            | 32768     | 2         | `./data/graphs/graph_32768_nodes.sif`     | `./data/logs/log.json`    |
 | 16            | 65536     | 1         | `./data/graphs/graph_65536_nodes.sif`     | `./data/logs/log.json`    |
 
-## Dependences ##
+## Dependencies ##
 
 This program depends on the following libraries:
 
@@ -100,3 +100,11 @@ This program depends on the following libraries:
    the JSON log file;
  - [Apache Commons CLI](https://commons.apache.org/proper/commons-cli/), used to
    parse the optional parameters.
+
+## References ##
+
+ 1. Ion Stoica, Robert Morris, David Liben-Nowell, David R. Karger, M. Frans 
+    Kaashoek, Frank Dabek, and Hari Balakrishnan. 2003. Chord: a scalable
+    peer-to-peer lookup protocol for internet applications. IEEE/ACM Trans.
+    Netw. 11, 1 (February 2003), 17-32.
+    DOI=http://dx.doi.org/10.1109/TNET.2002.808407
