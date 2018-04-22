@@ -39,7 +39,7 @@ or the length of the path computed by Chord. As example:
             "232": 1,
             ...
           },
-            "queries": {
+          "queries": {
             "22": 6,
             "23": 4,
             "24": 1,
@@ -103,7 +103,7 @@ This program depends on the following libraries:
 
 ## References ##
 
- 1. Ion Stoica, Robert Morris, David Liben-Nowell, David R. Karger, M. Frans 
+ 1. Ion Stoica, Robert Morris, David Liben-Nowell, David R. Karger, M. Frans
     Kaashoek, Frank Dabek, and Hari Balakrishnan. 2003. Chord: a scalable
     peer-to-peer lookup protocol for internet applications. IEEE/ACM Trans.
     Netw. 11, 1 (February 2003), 17-32.
