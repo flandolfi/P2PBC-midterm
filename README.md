@@ -43,7 +43,6 @@ or the length of the path computed by Chord. As example:
             "22": 6,
             "23": 4,
             "24": 1,
-            "25": 1,
             ...
           },
           "iterations": 1
@@ -67,7 +66,7 @@ using the `-h` or `--help` option:
 
 ## Batch simulations ##
 
-A suite of simulation can be executed running the command
+A suite of 16 simulations can be executed running the command
 
     ./bin/run_batch.sh
 
