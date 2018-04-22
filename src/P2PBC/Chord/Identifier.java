@@ -5,11 +5,9 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
 /**
- * An {@link Identifier} object may represent either a {@link Node} in the
- * Chord network or a key.
- *
- * This class provides the basic modular arithmetic operations that will be
- * used in the Chord routing algorithm.
+ * This class represent either a {@link Node} in the Chord network or a key,
+ * and provides the basic modular arithmetic operations that will be used in
+ * the Chord routing algorithm.
  */
 public class Identifier implements Comparable<Identifier> {
     private static int bits = 8;
@@ -120,13 +118,13 @@ public class Identifier implements Comparable<Identifier> {
 
     /**
      * Checks if this {@link Identifier} is between {@code left} (excluded) and
-     * {@code right} (included), i.e., if 0 < {@code left} - {@code this} <=
-     * {@code left} - {@code right} mod 2^{@link Identifier#getBitLength()}.
+     * {@code right} (included), i.e., if {@code 0 < left -  this <= left -
+     * right mod 2^}{@link Identifier#getBitLength()}.
      *
      * @param left the left bound of the interval, excluded.
      * @param right the right bound of the interval, included.
-     * @return {@code true} if 0 < {@code left} - {@code this} <= {@code left}
-     * - {@code right} mod 2^{@link Identifier#getBitLength()}, {@code false}
+     * @return {@code true} if {@code 0 < left - this <= left -  right mod 2^}
+     * {@link Identifier#getBitLength()}, {@code false}
      * otherwise.
      */
     public boolean isBetween(Identifier left, Identifier right) {
