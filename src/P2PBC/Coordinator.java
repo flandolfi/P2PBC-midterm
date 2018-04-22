@@ -9,74 +9,9 @@ import org.json.JSONObject;
 import org.json.JSONTokener;
 
 import java.io.*;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
 import java.util.*;
 
 public class Coordinator {
-    public static Collection<Node> buildNetwork(int bits, int nodes) {
-        TreeMap<Identifier, Node> network = new TreeMap<>();
-        Random random = new Random();
-        byte[] bytes = new byte[4];
-        Identifier.setBitLength(bits);
-        System.out.print("Creating nodes: 0 of " + nodes + ".\r");
-        int i = 0;
-
-        while (network.size() < nodes) {
-            try {
-                random.nextBytes(bytes);
-                Node node = new Node(InetAddress.getByAddress(bytes));
-
-                if (network.putIfAbsent(node.getId(), node) == null) {
-                    System.out.print("Creating nodes: " + ++i + " of " + nodes + ".\r");
-                }
-            } catch (UnknownHostException ignore) {}
-        }
-
-        i = 0;
-        System.out.print("\nCreating finger tables: 0 of " + network.size() + ".\r");
-
-        for (Node node : network.values()) {
-            node.updateFingerTable(network);
-            System.out.print("Creating finger tables: " + ++i + " of " + network.size() + ".\r");
-        }
-
-        return network.values();
-    }
-
-    public static void writeDOTFile(String path, Collection<Node> network) {
-        try (Writer writer = new BufferedWriter(new OutputStreamWriter(
-                new FileOutputStream(path), "utf-8"))) {
-            System.out.print("\nWriting DOT file... ");
-            writer.append("// BITS: ").append(String.valueOf(Identifier.getBitLength()))
-                    .append("\n// NODES: ").append(String.valueOf(network.size()))
-                    .append("\n\ndigraph network {\n");
-
-            for (Node node : network) {
-                writer.append("\t").append(node.toDOTString());
-            }
-
-            writer.append("}\n");
-            System.out.print("Done.");
-        } catch (IOException e) {
-            System.err.println("I/O Exception: " + e.getMessage());
-        }
-    }
-
-    public static void writeSIFFile(String path, Collection<Node> network) {
-        try (Writer writer = new BufferedWriter(new OutputStreamWriter(
-                new FileOutputStream(path), "utf-8"))) {
-            System.out.print("\nWriting SIF file... ");
-
-            for (Node node : network)
-                writer.append(node.toSIFString());
-
-            System.out.print("Done.");
-        } catch (IOException e) {
-            System.err.println("I/O Exception: " + e.getMessage());
-        }
-    }
-
     public static void main(String[] args) {
         Integer nBits = 16, nNodes = 1024, nIters = 1;
         Options options =  new Options();
@@ -151,19 +86,33 @@ public class Coordinator {
 
         /* **************************************** GENERATE NETWORK ************************************************ */
 
-        ArrayList<Node> network = new ArrayList<>(buildNetwork(nBits, nNodes));
-        File logFile = new File(logPath);
-        logFile.getParentFile().mkdirs();
+        System.out.print("Building network... ");
+        ArrayList<Node> network = new ArrayList<>(Node.buildNetwork(nBits, nNodes));
+        System.out.println("Done.");
 
         if (cmd.getOptionValue("sif") != null)
-            writeSIFFile(cmd.getOptionValue("sif"), network);
+            try (Writer writer = new BufferedWriter(new OutputStreamWriter(
+                    new FileOutputStream(cmd.getOptionValue("sif")), "utf-8"))) {
+                System.out.print("Writing SIF file... ");
+                Node.writeSIFFile(writer, network);
+                System.out.println("Done.");
+            } catch (IOException e) {
+                System.err.println("I/O Exception: " + e.getMessage());
+            }
 
         if (cmd.getOptionValue("dot") != null)
-            writeDOTFile(cmd.getOptionValue("dot"), network);
+            try (Writer writer = new BufferedWriter(new OutputStreamWriter(
+                    new FileOutputStream(cmd.getOptionValue("dot")), "utf-8"))) {
+                System.out.print("Writing DOT file... ");
+                Node.writeDOTFile(writer, network);
+                System.out.println("Done.");
+            } catch (IOException e) {
+                System.err.println("I/O Exception: " + e.getMessage());
+            }
 
         /* **************************************** START SIMULATION ************************************************ */
 
-        System.out.print("\nRunning simulations: 0 of " + nIters*nNodes + ".\r");
+        System.out.print("Running simulations: 0 of " + nIters*nNodes + ".\r");
         Random random = new Random();
         byte[] bytes = new byte[32];
         HashMap<Integer, Integer> gapHist = new HashMap<>();
@@ -207,6 +156,9 @@ public class Coordinator {
         results.put("endNodes", endNodeHist);
 
         log.append("experiments", new JSONObject(results));
+
+        File logFile = new File(logPath);
+        logFile.getParentFile().mkdirs();
 
         try (Writer writer = new BufferedWriter(new OutputStreamWriter(
                 new FileOutputStream(logFile), "utf-8"))) {

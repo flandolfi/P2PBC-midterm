@@ -1,23 +1,79 @@
 package P2PBC.Chord;
 
+import java.io.*;
 import java.math.BigInteger;
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.UnknownHostException;
+import java.nio.ByteBuffer;
 import java.util.*;
 import java.util.Map.Entry;
 
+
 public class Node {
     private Identifier id;
-    private InetAddress address;
+    private InetSocketAddress address;
     private Node[] fingerTable;
     private Node predecessor;
 
-    public Node(InetAddress address) {
+    public static Collection<Node> buildNetwork(int bits, int nodes) {
+        TreeMap<Identifier, Node> network = new TreeMap<>();
+        Random random = new Random();
+        byte[] bytes = new byte[4];
+        Identifier.setBitLength(bits);
+
+        while (network.size() < nodes) {
+            try {
+                random.nextBytes(bytes);
+                Node node = new Node(InetAddress.getByAddress(bytes), random.nextInt(65536));
+                network.putIfAbsent(node.getId(), node);
+            } catch (UnknownHostException ignore) {}
+        }
+
+        for (Node node : network.values())
+            node.initializeFingerTable(network);
+
+        return network.values();
+    }
+
+    public static void writeDOTFile(Writer writer, Collection<Node> network) throws IOException {
+        writeDOTFile(writer, network, true);
+    }
+
+    public static void writeDOTFile(Writer writer, Collection<Node> network, boolean asMultigraph) throws IOException {
+        writer.append("// BITS: ").append(String.valueOf(Identifier.getBitLength()))
+                .append("\n// NODES: ").append(String.valueOf(network.size()))
+                .append("\n\ndigraph network {\n");
+
+        for (Node node : network)
+            writer.append("\t").append(node.toDOTString(asMultigraph));
+
+        writer.append("}\n");
+    }
+
+    public static void writeSIFFile(Writer writer, Collection<Node> network) throws IOException {
+        writeSIFFile(writer, network, true);
+    }
+
+    public static void writeSIFFile(Writer writer, Collection<Node> network, boolean asMultigraph) throws IOException{
+        for (Node node : network)
+            writer.append(node.toSIFString(asMultigraph));
+    }
+
+    public Node(InetAddress address, int port) {
+        this(new InetSocketAddress(address, port));
+    }
+
+    public Node(InetSocketAddress address) {
         this.address = address;
-        this.id = new Identifier(address.getAddress());
+        ByteBuffer buffer = ByteBuffer.allocate(8)
+                .put(address.getAddress().getAddress())
+                .putInt(address.getPort());
+        this.id = new Identifier(buffer.array());
         this.fingerTable = new Node[Identifier.getBitLength()];
     }
 
-    public InetAddress getAddress() {
+    public InetSocketAddress getAddress() {
         return address;
     }
 
@@ -33,7 +89,7 @@ public class Node {
         return fingerTable;
     }
 
-    public void updateFingerTable(TreeMap<Identifier, Node> network) {
+    private void initializeFingerTable(TreeMap<Identifier, Node> network) {
         BigInteger gap = BigInteger.ONE;
         Entry<Identifier, Node> entry = network.lowerEntry(id);
         predecessor = entry == null? network.lastEntry().getValue() : entry.getValue();
@@ -50,11 +106,11 @@ public class Node {
         return id.toString();
     }
 
-    public String toSIFString() {
+    private String toSIFString() {
         return toSIFString(true);
     }
 
-    public String toSIFString(boolean asMultigraph) {
+    private String toSIFString(boolean asMultigraph) {
         StringBuilder result = new StringBuilder();
         Collection<Node> neighbours = Arrays.asList(fingerTable);
 
@@ -70,11 +126,11 @@ public class Node {
         return result.append("\n").toString();
     }
 
-    public String toDOTString() {
+    private String toDOTString() {
         return toDOTString(true);
     }
 
-    public String toDOTString(boolean asMultigraph) {
+    private String toDOTString(boolean asMultigraph) {
         StringBuilder result = new StringBuilder();
         Collection<Node> neighbours = Arrays.asList(fingerTable);
 
@@ -104,7 +160,7 @@ public class Node {
             return result;
         }
 
-        Node predecessor = findPredecessor(identifier);
+        Node predecessor = closestPrecedingNode(identifier);
 
         if (predecessor == this)
             return result;
@@ -114,7 +170,7 @@ public class Node {
         return result;
     }
 
-    private Node findPredecessor(Identifier identifier) {
+    private Node closestPrecedingNode(Identifier identifier) {
         for (int i = Identifier.getBitLength() - 1; i >= 0 ; i--)
             if (fingerTable[i].id.isBetween(id, identifier))
                 return fingerTable[i];
