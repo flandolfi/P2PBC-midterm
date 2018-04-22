@@ -11,7 +11,34 @@ import org.json.JSONTokener;
 import java.io.*;
 import java.util.*;
 
+/**
+ * This class manages the creation and simulation of the Chord Lookup protocol.
+ */
 public class Coordinator {
+
+    /**
+     * Creates a Chord network and then simulates the lookup protocol.
+     *
+     * The arguments {@code args} may contain the following strings:
+     *
+     *  - {@code -n | --nodes [arg]}:   specifies the number of nodes in the
+     *                                  network (default: 1024);
+     *  - {@code -b | --bits [arg]}:    specifies the number of bits of the
+     *                                  {@link Identifier}s (default: 16);
+     *  - {@code -s | --sif [arg]}:     exports the generated network as a SIF
+     *                                  file with path {@code arg};
+     *  - {@code -d | --dot [arg]}:     exports the generated network as a DOT
+     *      *                           file with path {@code arg};
+     *  - {@code -o | --out [arg]}:     stores the statistics to a JSON file
+     *                                  with path {@code arg}. If it exists,
+     *                                  appends the results (default:
+     *                                  "./log.json")
+     *  - {@code -l | --lookups [arg]}: specifies the number of lookups to be
+     *                                  performed for each node (default: 1);
+     *  - {@code -h | --help}:          shows a help text and exits.
+     *
+     * @param args an array of {@link String}s containing optional settings.
+     */
     public static void main(String[] args) {
         Integer nBits = 16, nNodes = 1024, nIters = 1;
         Options options =  new Options();
