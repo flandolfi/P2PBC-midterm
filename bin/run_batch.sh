@@ -3,7 +3,7 @@
 cd $(dirname $(readlink -f $0))
 
 NODES=2
-ITERS=16
+ITERS=32768
 BITS=16
 GRAPH_DIR="../data/graphs/"
 LOG_DIR="../data/logs/"
@@ -22,4 +22,5 @@ for i in `seq 1 ${BITS}`; do
             -s ${GRAPH_DIR}/graph_${NODES}_nodes.sif \
             -o ${LOG_FILE}
     NODES=$((NODES*2))
+    ITERS=$((ITERS/2))
 done
