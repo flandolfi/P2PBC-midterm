@@ -11,10 +11,10 @@ The program can be executed with the command
 
     java -jar ./bin/P2PBC-midterm.jar
 
-executed in the root folder. This will start a simulation on a Chord ring of 2¹⁶
-possible keys initialized with 2¹⁰ nodes, creating a JSON file `./log.json` with
-the routing statistics, such as an histogram of the number of keys of each node
-or the length of the path computed by Chord. As example:
+from the root directory. This will start a simulation on a Chord ring of 2¹⁶
+possible keys initialized with 2¹⁰ nodes, creating a JSON file `./log.json`
+with the routing statistics, such as an histogram of the number of keys of each
+node or the length of the path computed by Chord. For example:
 
     {
       "experiments": [
