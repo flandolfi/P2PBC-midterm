@@ -10,8 +10,10 @@
 # Mobile Tools for Java (J2ME)
 .mtj.tmp/
 
-# Package Files #
-*.jar
+# Library Files
+lib/*
+
+# Package Files
 *.war
 *.ear
 *.zip
