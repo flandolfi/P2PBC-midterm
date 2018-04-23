@@ -30,3 +30,6 @@ docs/*
 .vscode/*
 *.iml
 out/*
+
+# Report
+report/*
